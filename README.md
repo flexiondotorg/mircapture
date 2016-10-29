@@ -6,7 +6,7 @@ Wrapper for `mirscreencast` and `ffmpeg` to record Unity 8 desktop videos.
 
 Using `miscreencast` to capture recordings of a Unity 8 desktop session
 on my Dell XPS15 with UHD display requires *tens of Gigabytes of storage
-**per minute*** because `mirscreencast` captures the native resolution
+per minute* because `mirscreencast` captures the native resolution
 using rawvideo at 60fps.
 
 This script automatically determines (hopefully) sane defaults for
@@ -16,7 +16,7 @@ then `ffmpeg` starts real-time encoding from the FIFO using similarly sane
 defaults.
 
 The result is that captures of a Unity 8 desktop session can now be
-recorded using *tens of Megabytes **per minute***.
+recorded using *tens of Megabytes per minute*.
 
 ## Requirements
 
