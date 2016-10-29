@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+# Wrapper for mirscreencast and ffmpeg for recording Unity 8 desktop videos
+# Copyright (c) 2016 Martin Wimpress
+# MIT Licensed
+
+# Set the encoding profile and time-stamp
+CAP_PRESET="ultrafast"
+CAP_STAMP=$(date +%y%m%j%H%M%S)
+
+# Set where the Mir socket is and where the query info be dumped.
+MIR_SOCKET="/run/mir_socket"
+MIR_QUERY="/tmp/mir_query"
+
+# Make sure the required tools are available.
+REQUIRED_TOOLS=`cat << EOF
+ffmpeg
+mirscreencast
+cut
+grep
+mkfifo
+pkill
+sed
+tr
+EOF`
+
+for REQUIRED_TOOL in ${REQUIRED_TOOLS}; do
+    which ${REQUIRED_TOOL} >/dev/null  
+    if [ $? -eq 1 ]; then
+        echo "ERROR! \"${REQUIRED_TOOL}\" is missing. $(basename ${0}) requires it to operate."
+        echo "  * Please install \"${REQUIRED_TOOL}\"."
+        exit 1
+    fi
+done
+
+# Query Mir for screen dimensions, etc.
+MIR_QUERY=$(mirscreencast -m ${MIR_SOCKET} --query 1>${MIR_QUERY} 2>/dev/null)
+RET=$?
+if [ ${RET} -ne 0 ]; then
+  echo "ERROR! Unable to query the Mir display server."
+  exit ${RET}
+fi
+
+# Initialise variables.
+MIR_COLORSPACE=$(grep "Colorspace:" /tmp/mir_query | cut -d : -f 2 | sed 's/ //g' | tr '[:upper:]' '[:lower:]')
+MIR_WIDTH=$(grep "Output size:" /tmp/mir_query | cut -d : -f 2 | cut -d x -f 1 | sed 's/ //g')
+MIR_HEIGHT=$(grep "Output size:" /tmp/mir_query | cut -d : -f 2 | cut -d x -f 2 | sed 's/ //g')
+MIR_RAWFRAMERATE=$(grep "Capture rate" /tmp/mir_query | cut -d : -f 2 | sed 's/ //g' | tr '[:upper:]' '[:lower:]')
+
+# Round the Mir framerate.
+MIR_FRAMERATE=$(printf '%.*f\n' 0 ${MIR_RAWFRAMERATE})
+
+# Report what we found.
+echo "Colorspace: ${MIR_COLORSPACE}"
+echo "Width: ${MIR_WIDTH}"
+echo "Height: ${MIR_HEIGHT}"
+echo "Capture rate: ${MIR_FRAMERATE}"
+
+# If the mirscreenscast supported floats for capture intervals a frame rate of 60 with a capture
+# interval of 2.5 would give us 24fps. Just halve the frame rate for now to give us 30fps.
+# TODO: What other framerate are common? Set sensible capture intervals for them.
+if [ ${MIR_FRAMERATE} -eq 60 ]; then
+    CAP_INTERVAL=2
+else
+    CAP_INTERVAL=2
+fi
+CAP_FRAMERATE=$(echo "scale=2; ${MIR_FRAMERATE} / ${CAP_INTERVAL}" | bc -l)
+
+# Resize the capture resolution to something senisble.
+# TODO: Don't make assumptions about screen ratios.
+if [ ${MIR_HEIGHT} -gt 1080 ]; then
+  CAP_WIDTH=1920
+  CAP_HEIGHT=1080
+elif [ ${MIR_HEIGHT} -gt 720 ]; then
+  CAP_WIDTH=1280
+  CAP_HEIGHT=720
+else
+  CAP_WIDTH=${MIR_WIDTH}
+  CAP_HEIGHT=${MIR_HEIGHT}  
+fi
+
+# Create a suitably named FIFO for mirscreencast
+CAP_FIFO="/tmp/Mircapture_${CAP_WIDTH}x${CAP_HEIGHT}-${CAP_FRAMERATE}fps-${CAP_STAMP}.${MIR_COLORSPACE}"
+mkfifo "${CAP_FIFO}"
+
+# Send mirscreencast output to the FIFO and then start encoding from the FIFO. 
+CAP_FILENAME="${HOME}/Mircapture_${CAP_WIDTH}x${CAP_HEIGHT}-${CAP_FRAMERATE}fps-${CAP_STAMP}.mp4"
+echo "Capturing to ${CAP_FILENAME}"
+mirscreencast -m ${MIR_SOCKET} --cap-interval ${CAP_INTERVAL} -f ${CAP_FIFO} -s ${CAP_WIDTH} ${CAP_HEIGHT} 2>/dev/null &
+ffmpeg -hide_banner -f rawvideo -pix_fmt ${MIR_COLORSPACE} -s:v ${CAP_WIDTH}x${CAP_HEIGHT} -r ${CAP_FRAMERATE} -i ${CAP_FIFO} -c:v libx264 -preset ${CAP_PRESET} "${CAP_FILENAME}"
+pkill -9 mirscreencast
+echo "Capture is done."
+ls -lh "${CAP_FILENAME}"
+
+# Cleanup
+rm -fv ${MIR_QUERY}
+rm -fv ${CAP_FIFO}
