@@ -87,11 +87,11 @@ mkfifo "${CAP_FIFO}"
 CAP_FILENAME="${HOME}/Mircapture_${CAP_WIDTH}x${CAP_HEIGHT}-${CAP_FRAMERATE}fps-${CAP_STAMP}.mp4"
 echo "Capturing to ${CAP_FILENAME}"
 mirscreencast -m ${MIR_SOCKET} --cap-interval ${CAP_INTERVAL} -f ${CAP_FIFO} -s ${CAP_WIDTH} ${CAP_HEIGHT} 2>/dev/null &
-ffmpeg -hide_banner -f rawvideo -pix_fmt ${MIR_COLORSPACE} -s:v ${CAP_WIDTH}x${CAP_HEIGHT} -r ${CAP_FRAMERATE} -i ${CAP_FIFO} -c:v libx264 -preset ${CAP_PRESET} "${CAP_FILENAME}"
+ffmpeg -hide_banner -loglevel warning -f rawvideo -pix_fmt ${MIR_COLORSPACE} -s:v ${CAP_WIDTH}x${CAP_HEIGHT} -r ${CAP_FRAMERATE} -i ${CAP_FIFO} -c:v libx264 -preset ${CAP_PRESET} "${CAP_FILENAME}"
 pkill -9 mirscreencast
 echo "Capture is done."
 ls -lh "${CAP_FILENAME}"
 
 # Cleanup
-rm -fv ${MIR_QUERY}
-rm -fv ${CAP_FIFO}
+rm -f ${MIR_QUERY}
+rm -f ${CAP_FIFO}
