@@ -22,7 +22,7 @@ be recorded using *tens of Megabytes per minute*.
 
 Currently `mircapture` has only been tested on Ubuntu (Yakkety Yak) 16.10.
 
-    apt install ffmpeg mirutils netcat
+    apt install ffmpeg mir-utils netcat
 
 ## Usage
 
@@ -35,7 +35,7 @@ Currently `mircapture` has only been tested on Ubuntu (Yakkety Yak) 16.10.
     * `./mircapture`
 
   * When you've recorded what you want, return to the terminal where `mircapture` is running and just press `q` to stop `ffmpeg`.
-    * `mircapture` to cleanly stop `mirscreencast` for you, no manual `pkill -9` required.
+    * `mircapture` will cleanly stop `mirscreencast` for you, no manual `pkill -9` required.
     
   * You'll have a new video in your home directory.
     * Named something like: `Mircapture_1920x1080-30.00fps-1610303163114.mp4`
