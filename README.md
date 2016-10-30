@@ -38,10 +38,19 @@ Currently `mircapture` has only been tested on Ubuntu (Yakkety Yak) 16.10.
     * `mircapture` will cleanly stop `mirscreencast` for you, no manual `pkill -9` required.
     
   * You'll have a new video in your home directory.
-    * Named something like: `Mircapture_1920x1080-30.00fps-1610303163114.mp4`
+    * Named something like: `Mircapture_1920x1080-30.00fps-16304-0939-50.mp4`
+
+## Changes
+
+Summary of changes.
+
+### 1.0 
+
+  * Initial release.
+  * Local capture and encoding only.
 
 ## To Do
 
   * Add options for `-local`, `-tx`, `-rx` so that captures can optionally be streamed to a remote host for encoding.
-  * Add optional audio input selection for recording a voice over.
-  * Make `mircapture` a snap, when the utility interface is available.
+  * Add optional audio input selection for recording voice overs.
+  * Make `mircapture` a snap. May require the utility interface which is not yet available.
