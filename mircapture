@@ -6,7 +6,7 @@
 
 # Set the encoding profile and time-stamp
 CAP_PRESET="ultrafast"
-CAP_STAMP=$(date +%y%m%j%H%M%S)
+CAP_STAMP=$(date +%y%j-%H%M-%S)
 
 # Set where the Mir socket is and where the query info be dumped.
 MIR_SOCKET="/run/mir_socket"
@@ -14,6 +14,7 @@ MIR_QUERY="/tmp/mir_query"
 
 # Make sure the required tools are available.
 REQUIRED_TOOLS=`cat << EOF
+du
 ffmpeg
 mirscreencast
 cut
@@ -21,6 +22,7 @@ grep
 mkfifo
 pkill
 sed
+sync
 tr
 EOF`
 
@@ -87,11 +89,13 @@ mkfifo "${CAP_FIFO}"
 CAP_FILENAME="${HOME}/Mircapture_${CAP_WIDTH}x${CAP_HEIGHT}-${CAP_FRAMERATE}fps-${CAP_STAMP}.mp4"
 echo "Capturing to ${CAP_FILENAME}"
 mirscreencast -m ${MIR_SOCKET} --cap-interval ${CAP_INTERVAL} -f ${CAP_FIFO} -s ${CAP_WIDTH} ${CAP_HEIGHT} 2>/dev/null &
-ffmpeg -hide_banner -loglevel warning -f rawvideo -pix_fmt ${MIR_COLORSPACE} -s:v ${CAP_WIDTH}x${CAP_HEIGHT} -r ${CAP_FRAMERATE} -i ${CAP_FIFO} -c:v libx264 -preset ${CAP_PRESET} "${CAP_FILENAME}"
+echo "Press [q] to stop recording."
+ffmpeg -hide_banner -loglevel error -f rawvideo -pix_fmt ${MIR_COLORSPACE} -s:v ${CAP_WIDTH}x${CAP_HEIGHT} -r ${CAP_FRAMERATE} -i ${CAP_FIFO} -c:v libx264 -preset ${CAP_PRESET} "${CAP_FILENAME}"
 pkill -9 mirscreencast
-echo "Capture is done."
-ls -lh "${CAP_FILENAME}"
+echo "Capture is done"
+du -h "${CAP_FILENAME}"
 
 # Cleanup
 rm -f ${MIR_QUERY}
 rm -f ${CAP_FIFO}
+sync
